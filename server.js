@@ -27,6 +27,11 @@ wss.on('connection', (ws, req) => {
     }
 });
 
+// health check
+app.get('/health', (req, res) => {
+    res.send('OK');
+});
+
 app.use((req, res) => {
     const hostname = req.headers.host;
     const clientId = hostname.split('.')[0] || 'p1111';
