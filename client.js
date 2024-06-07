@@ -1,44 +1,64 @@
 const WebSocket = require('ws');
 const http = require('http');
-const httpProxy = require('http-proxy');
-const url = require('url');
 
-// Get the local server port and client ID from the command line arguments
-const localServerPort = process.argv[2];
+const localPort = process.argv[2];
 const clientId = process.argv[3] || '1111';
 
-if (!localServerPort || !clientId) {
-    console.error('Usage: node client.js <localServerPort> <clientId>');
-    process.exit(1);
-}
+const serverUrl = `ws://localhost:8080?clientId=${clientId}&port=${localPort}`; // Unique ID for the tunnel
 
-const wsUrl = `wss://p${clientId}.you2.travel/?clientId=p${clientId}&port=${localServerPort}`;
+const ws = new WebSocket(serverUrl);
 
-// Create a WebSocket connection to the server
-const ws = new WebSocket(wsUrl);
-
+// When WebSocket connection is open
 ws.on('open', () => {
-    console.log(`Connected to WebSocket server as client: ${clientId}`);
+    console.log('WebSocket connection established');
 });
 
+// When WebSocket connection receives a message
 ws.on('message', (message) => {
-    console.log(`Received message: ${message}`);
+    const requestDetails = JSON.parse(message);
+    const id = requestDetails.id;
+    const options = {
+        hostname: 'localhost',
+        port: localPort,
+        path: requestDetails.url,
+        method: requestDetails.method,
+        headers: requestDetails.headers
+    };
+
+    // Forward the request to the local server
+    const proxyReq = http.request(options, (proxyRes) => {
+        let body = '';
+        proxyRes.on('data', (chunk) => {
+            body += chunk;
+        });
+
+        proxyRes.on('end', () => {
+            const response = {
+                id,
+                statusCode: proxyRes.statusCode,
+                headers: proxyRes.headers,
+                body: body
+            };
+            console.log(response);
+            // Send the response back through WebSocket
+            ws.send(JSON.stringify(response));
+        });
+    });
+
+    proxyReq.on('error', (e) => {
+        const errorResponse = {
+            id,
+            statusCode: 500,
+            headers: {},
+            body: `Proxy request error: ${e.message}`
+        };
+        ws.send(JSON.stringify(errorResponse));
+    });
+
+    proxyReq.end();
 });
 
+// When WebSocket connection is closed
 ws.on('close', () => {
-    console.log(`Disconnected from WebSocket server`);
-});
-
-ws.on('error', (error) => {
-    console.error(`WebSocket error: ${error}`);
-});
-
-// Create an HTTP server to receive requests from the proxy
-const proxy = httpProxy.createProxyServer({});
-const server = http.createServer((req, res) => {
-    proxy.web(req, res, { target: `http://localhost:${localServerPort}` });
-});
-
-server.listen(4000, () => {
-    console.log(`Local HTTP server is running on port ${localServerPort}`, `https://p${clientId}.you2.travel`);
+    console.log('WebSocket connection closed');
 });
