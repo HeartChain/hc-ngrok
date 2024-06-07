@@ -39,7 +39,7 @@ app.use((req, res) => {
 
     if (clientId && clients[clientId]) {
         const targetPort = clients[clientId].port;
-        proxy.web(req, res, { target: `http://${clientId}:${targetPort}` });
+        proxy.web(req, res, { target: `http://localhost:${targetPort}` });
     } else {
         res.status(404).send(`Client ${clientId} not found`);
     }
