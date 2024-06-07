@@ -12,7 +12,7 @@ if (!localServerPort || !clientId) {
     process.exit(1);
 }
 
-const wsUrl = `ws://localhost:8080/?clientId=p${clientId}&port=${localServerPort}`;
+const wsUrl = `wss://p${clientId}.you2.travel/?clientId=p${clientId}&port=${localServerPort}`;
 
 // Create a WebSocket connection to the server
 const ws = new WebSocket(wsUrl);
@@ -39,6 +39,6 @@ const server = http.createServer((req, res) => {
     proxy.web(req, res, { target: `http://localhost:${localServerPort}` });
 });
 
-server.listen(localServerPort, () => {
-    console.log(`Local HTTP server is running on port ${localServerPort}`);
+server.listen(4000, () => {
+    console.log(`Local HTTP server is running on port ${localServerPort}`, `https://p${clientId}.you2.travel`);
 });
