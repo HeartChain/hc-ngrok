@@ -4,13 +4,13 @@ const http = require('http');
 const localPort = process.argv[2];
 const clientId = process.argv[3] || '1111';
 
-const serverUrl = `wss://p${clientId}.you2.travel?clientId=${clientId}&port=${localPort}`; // Unique ID for the tunnel
+const serverUrl = `wss://p${clientId}.you2.travel?clientId=p${clientId}&port=${localPort}`; // Unique ID for the tunnel
 
 const ws = new WebSocket(serverUrl);
 
 // When WebSocket connection is open
 ws.on('open', () => {
-    console.log('WebSocket connection established');
+    console.log('Forwarding to ...', `https://p${clientId}.you2.travel`);
 });
 
 // When WebSocket connection receives a message
@@ -39,7 +39,6 @@ ws.on('message', (message) => {
                 headers: proxyRes.headers,
                 body: body
             };
-            console.log(response);
             // Send the response back through WebSocket
             ws.send(JSON.stringify(response));
         });
