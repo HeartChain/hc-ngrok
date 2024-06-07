@@ -4,7 +4,7 @@ const http = require('http');
 const localPort = process.argv[2];
 const clientId = process.argv[3] || '1111';
 
-const serverUrl = `ws://localhost:8080?clientId=${clientId}&port=${localPort}`; // Unique ID for the tunnel
+const serverUrl = `wss://p${clientId}.you2.travel?clientId=${clientId}&port=${localPort}`; // Unique ID for the tunnel
 
 const ws = new WebSocket(serverUrl);
 
