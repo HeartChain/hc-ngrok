@@ -1,5 +1,5 @@
 const WebSocket = require('ws');
-const http = require('http');
+const request = require('request');
 
 const localPort = process.argv[2];
 const clientId = process.argv[3] || '1111';
@@ -18,7 +18,7 @@ ws.on('message', (message) => {
     const requestDetails = JSON.parse(message);
     const id = requestDetails.id;
     const options = {
-        hostname: 'localhost',
+        url: `http://localhost:${localPort}${requestDetails.url}`,
         port: localPort,
         path: requestDetails.url,
         method: requestDetails.method,
@@ -26,35 +26,31 @@ ws.on('message', (message) => {
     };
 
     // Forward the request to the local server
-    const proxyReq = http.request(options, (proxyRes) => {
-        let body = '';
-        proxyRes.on('data', (chunk) => {
-            body += chunk;
-        });
-
-        proxyRes.on('end', () => {
-            const response = {
+    request(options, (error, response, body) => {
+        if (error) {
+            const errorResponse = {
                 id,
-                statusCode: proxyRes.statusCode,
-                headers: proxyRes.headers,
-                body: body
+                statusCode: 500,
+                headers: {},
+                body: `Proxy request error: ${error.message}`,
             };
-            // Send the response back through WebSocket
-            ws.send(JSON.stringify(response));
-        });
-    });
+            ws.send(JSON.stringify(errorResponse));
+            return;
+        }
 
-    proxyReq.on('error', (e) => {
-        const errorResponse = {
+        const resHeaders = response.headers;
+        delete resHeaders['content-encoding']; // Prevent encoding issues
+
+        const res = {
             id,
-            statusCode: 500,
-            headers: {},
-            body: `Proxy request error: ${e.message}`
+            statusCode: response.statusCode,
+            headers: resHeaders,
+            body: body.toString('base64') // Encode body as base64 to handle binary data
         };
-        ws.send(JSON.stringify(errorResponse));
-    });
 
-    proxyReq.end();
+        // Send the response back through WebSocket
+        ws.send(JSON.stringify(res));
+    });
 });
 
 // When WebSocket connection is closed
