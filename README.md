@@ -17,12 +17,17 @@ This project demonstrates a Node.js-based WebSocket HTTP proxy, similar to ngrok
 ## Installation
 
 1. Clone the repository:
+```bash
+git clone https://github.com/codebider/ngrok-nodejs.git 
+```
+
+2. Install npm packages:
 
 ```bash
 npm install
 ```
 
-## How to forward
+3. Forwarding
 
 ```bash
 node client 3000 tindrrrr
