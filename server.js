@@ -33,6 +33,10 @@ app.get('/health', (req, res) => {
 
 app.use((req, res) => {
     const hostname = req.headers.host;
+    if (!hostname) {
+        res.status(400).send('Host header is required');
+        return;
+    }
     const clientId = hostname.split('.')[0] || 'p1111';
 
     if (clientId && clients[clientId]) {
